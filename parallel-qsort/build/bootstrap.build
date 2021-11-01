@@ -1,0 +1,7 @@
+project = parallel-qsort
+
+using version
+using config
+using test
+using install
+using dist

@@ -1,0 +1,7 @@
+project = sequential-pi
+
+using version
+using config
+using test
+using install
+using dist

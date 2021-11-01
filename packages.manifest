@@ -1,0 +1,10 @@
+: 1
+location: parallel-qsort/
+:
+location: sequential-qsort/
+:
+location: sequential-pi/
+:
+location: parallel-pi/
+:
+location: parallel-balanced-pi/

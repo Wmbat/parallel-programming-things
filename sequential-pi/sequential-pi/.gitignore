@@ -1,0 +1,5 @@
+sequential-pi
+
+# Testscript output directory (can be symlink).
+#
+test-sequential-pi

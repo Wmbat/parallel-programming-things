@@ -1,0 +1,13 @@
+: 1
+name: parallel-balanced-pi
+version: 0.1.0-a.0.z
+project: parallel-programming-things
+summary: parallel-balanced-pi C++ executable
+license: other: proprietary ; Not free/open source.
+description-file: README.md
+url: https://example.org/parallel-programming-things
+email: h_spehn@mandan.encs.concordia.ca
+#build-error-email: h_spehn@mandan.encs.concordia.ca
+depends: * build2 >= 0.14.0
+depends: * bpkg >= 0.14.0
+#depends: libhello ^1.0.0
