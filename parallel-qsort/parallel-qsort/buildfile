@@ -1,6 +1,6 @@
 libs =
 #import libs += libhello%lib{hello}
 
-exe{parallel-qsort}: {hxx ixx txx cxx}{**} $libs testscript
+exe{parallel-qsort}: {hxx ixx txx cxx}{**} $libs
 
 cxx.poptions =+ "-I$out_root" "-I$src_root"

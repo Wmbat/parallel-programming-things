@@ -1,0 +1,67 @@
+[
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "-std=c++23",
+   "-o",
+   "../vermillon-clang-debug-asan/parallel-balanced-pi/parallel-balanced-pi/parallel-balanced-pi.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-balanced-pi/parallel-balanced-pi/parallel-balanced-pi.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-balanced-pi/parallel-balanced-pi/parallel-balanced-pi.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "-std=c++23",
+   "-o",
+   "../vermillon-clang-debug-asan/sequential-qsort/sequential-qsort/sequential_qsort.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-qsort/sequential-qsort/sequential_qsort.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-qsort/sequential-qsort/sequential_qsort.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "-std=c++23",
+   "-o",
+   "../vermillon-clang-debug-asan/sequential-pi/sequential-pi/sequential-pi.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-pi/sequential-pi/sequential-pi.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-pi/sequential-pi/sequential-pi.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "-std=c++23",
+   "-o",
+   "../vermillon-clang-debug-asan/parallel-qsort/parallel-qsort/parallel_qsort.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-qsort/parallel-qsort/parallel_qsort.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-qsort/parallel-qsort/parallel_qsort.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "-std=c++23",
+   "-o",
+   "../vermillon-clang-debug-asan/parallel-pi/parallel-pi/parallel-pi.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-pi/parallel-pi/parallel-pi.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-pi/parallel-pi/parallel-pi.cpp"
+ }
+]
