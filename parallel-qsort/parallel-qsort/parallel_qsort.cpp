@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdint>
+#include <ctime>
 #include <iostream>
 #include <iterator>
 #include <random>
@@ -24,21 +25,6 @@ using iterator = typename std::vector<i64>::iterator;
 static constexpr i64 random_generation_bound = 1000;
 static constexpr i64 element_per_core = 64;
 
-auto generate_random_array(i64 count) -> std::vector<i64>
-{
-   std::random_device rd;
-   auto random_engine = std::default_random_engine(rd());
-   auto distribution = std::uniform_int_distribution<i64>(0, random_generation_bound);
-
-   auto data = std::vector<i64>(count);
-   for (auto& val : data)
-   {
-      val = distribution(random_engine);
-   }
-
-   return data;
-}
-
 template <typename It>
 void qsort(It beg, It end)
 {
@@ -58,10 +44,16 @@ void qsort(It beg, It end)
    }
 }
 
+auto generate_random_array(i64 count) -> std::vector<i64>;
+
+template <typename It>
+auto compute_median_pivot(It begin, It end) -> i64;
+
 void send_list(iterator begin, iterator end, i32 target, MPI_Comm comm);
 auto receive_list(i32 target, MPI_Comm comm) -> std::vector<i64>;
 
-auto format_vector(const std::vector<i64>& data) -> std::string;
+template <typename It>
+auto format_range(It begin, It end) -> std::string;
 
 auto is_power_of_2(i32 n) -> bool;
 
@@ -90,10 +82,7 @@ auto main(int argc, char* argv[]) -> int
    if (process_id == 0)
    {
       original_data = generate_random_array(element_per_core * process_count);
-
-      const i64 sum = std::accumulate(begin(original_data), end(original_data), 0L);
-      const f64 median = static_cast<double>(sum) / static_cast<double>(original_data.size());
-      pivot = static_cast<i64>(std::ceil(median));
+      pivot = compute_median_pivot(begin(original_data), end(original_data));
    }
 
    auto local_array = std::vector<i64>(element_per_core);
@@ -105,46 +94,33 @@ auto main(int argc, char* argv[]) -> int
 
    auto* communicator = MPI_COMM_WORLD;
 
+   i32 local_rank = process_id;
+
    const i64 dimensions = static_cast<i64>(std::log2(process_count));
    for (i64 i = dimensions - 1; i >= 0; --i)
    {
-      if (i >= 0)
-      {
-         MPI_Comm_split(communicator, process_id & (1 << i), process_id, &communicator);
-         MPI_Comm_rank(communicator, &process_id);
-
-         if (process_id == 0)
-         {
-            const i64 sum = std::accumulate(begin(local_array), end(local_array), 0L);
-            const f64 median = static_cast<double>(sum) / static_cast<double>(local_array.size());
-            pivot = static_cast<i64>(std::ceil(median));
-         }
-
-         MPI_Bcast(&pivot, 1, MPI_INT64_T, 0, communicator);
-      }
-
-      std::cout << "P" << process_id << " pivot = " << pivot << "\n";
-      std::cout << "P" << process_id << " elements = " << local_array.size() << "\n";
+      std::cout << "P" << process_id << " - pivot = " << pivot << "\n";
+      std::cout << "P" << process_id << " - elements = " << local_array.size() << "\n";
 
       const auto separator = partition(begin(local_array), end(local_array), [=](i64 v) {
          return v < pivot;
       });
 
-      const i32 target = process_id ^ (1 << i);
+      const i32 target = local_rank ^ (1 << i);
       const i64 local_low_list_size = std::distance(begin(local_array), separator);
       const i64 local_high_list_size = std::distance(separator, end(local_array));
 
       if ((process_id & (1 << i)) == 0)
       {
-         std::cout << "P" << process_id << " sending high-list\n";
+         std::cout << "P" << process_id << " - sending high-list\n";
 
          send_list(separator, end(local_array), target, communicator);
 
-         std::cout << "P" << process_id << " receiving low-list\n";
+         std::cout << "P" << process_id << " - receiving low-list\n";
 
          const auto recv_low_list = receive_list(target, communicator);
 
-         std::cout << "P" << process_id << " merging\n";
+         std::cout << "P" << process_id << " - merging\n";
 
          auto new_array = std::vector<i64>(recv_low_list.size() + local_low_list_size);
          std::copy(begin(local_array), separator, begin(new_array));
@@ -155,15 +131,15 @@ auto main(int argc, char* argv[]) -> int
       }
       else
       {
-         std::cout << "P" << process_id << " sending low-list\n";
+         std::cout << "P" << process_id << " - sending low-list\n";
 
          send_list(begin(local_array), separator, target, communicator);
 
-         std::cout << "P" << process_id << " receiving high-list\n";
+         std::cout << "P" << process_id << " - receiving high-list\n";
 
          const auto recv_high_list = receive_list(target, communicator);
 
-         std::cout << "P" << process_id << " merging\n";
+         std::cout << "P" << process_id << " - merging\n";
 
          auto new_array = std::vector<i64>(local_high_list_size + recv_high_list.size());
          std::copy(separator, end(local_array), begin(new_array));
@@ -172,17 +148,64 @@ auto main(int argc, char* argv[]) -> int
 
          local_array = new_array;
       }
+
+      if (i >= 0)
+      {
+         MPI_Comm_split(communicator, local_rank & (1 << i), process_id, &communicator);
+         MPI_Comm_rank(communicator, &local_rank);
+
+         if (process_id == 0)
+         {
+            pivot = compute_median_pivot(begin(local_array), end(local_array));
+         }
+
+         MPI_Bcast(&pivot, 1, MPI_INT64_T, 0, communicator);
+      }
    }
 
-   std::cout << "P" << process_id << " performing local quicksort\n";
+   std::cout << "P" << process_id << " - performing local quicksort\n";
 
    qsort(begin(local_array), end(local_array));
 
-   std::cout << "P" << process_id << " sorted array = {" << format_vector(local_array) << "}\n";
+   MPI_Gather(local_array.data(), static_cast<i32>(local_array.size()), MPI_INT64_T,
+              original_data.data(), static_cast<i32>(local_array.size()), MPI_INT64_T, 0,
+              MPI_COMM_WORLD);
 
+   const f64 elapsed_time = MPI_Wtime() - start_time;
    MPI_Finalize();
 
+   if (process_id == 0)
+   {
+      std::cout << "data:  " << format_range(begin(original_data), end(original_data)) << '\n';
+      std::cout << "elapsed time: " << elapsed_time << '\n';
+   }
+
    return 0;
+}
+
+auto generate_random_array(i64 count) -> std::vector<i64>
+{
+   std::random_device rd;
+   auto random_engine = std::default_random_engine(rd());
+   auto distribution = std::uniform_int_distribution<i64>(0, random_generation_bound);
+
+   auto data = std::vector<i64>(count);
+   for (auto& val : data)
+   {
+      val = distribution(random_engine);
+   }
+
+   return data;
+}
+
+template <typename It>
+auto compute_median_pivot(It begin, It end) -> i64
+{
+   const i64 size = std::distance(begin, end);
+   const i64 sum = std::accumulate(begin, end, 0L);
+   const f64 median = static_cast<double>(sum) / static_cast<double>(size);
+
+   return static_cast<i64>(std::ceil(median));
 }
 
 void send_list(iterator begin, iterator end, i32 target, MPI_Comm comm)
@@ -203,14 +226,14 @@ auto receive_list(i32 target, MPI_Comm comm) -> std::vector<i64>
    return array;
 }
 
-auto format_vector(const std::vector<i64>& data) -> std::string
+template <typename It>
+auto format_range(It begin, It end) -> std::string
 {
    std::string str = " ";
-   for (auto i : data)
-   {
-      str += std::to_string(i);
+   std::for_each(begin, end, [&](const auto& v) {
+      str += std::to_string(v);
       str += " ";
-   }
+   });
 
    return str;
 }
