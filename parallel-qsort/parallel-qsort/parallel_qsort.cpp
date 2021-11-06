@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iterator>
 #include <random>
+#include <string>
 #include <vector>
 
 #include <mpi.h>
@@ -110,6 +111,7 @@ auto main(int argc, char* argv[]) -> int
       const i64 local_low_list_size = std::distance(begin(local_array), separator);
       const i64 local_high_list_size = std::distance(separator, end(local_array));
 
+
       if ((process_id & (1 << i)) == 0)
       {
          std::cout << "P" << process_id << " - sending high-list\n";
@@ -167,9 +169,12 @@ auto main(int argc, char* argv[]) -> int
 
    qsort(begin(local_array), end(local_array));
 
-   MPI_Gather(local_array.data(), static_cast<i32>(local_array.size()), MPI_INT64_T,
-              original_data.data(), static_cast<i32>(local_array.size()), MPI_INT64_T, 0,
-              MPI_COMM_WORLD);
+   i32 local_size = static_cast<i32>(local_array.size());
+   auto sizes = std::vector<i32>(process_count);
+
+   MPI_Gather(&local_size, 1, MPI_INT32_T, sizes.data(), 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
+   MPI_Gatherv(local_array.data(), static_cast<i32>(local_array.size()), MPI_INT64_T,
+               original_data.data(), nullptr, nullptr, MPI_INT64_T, 0, MPI_COMM_WORLD);
 
    const f64 elapsed_time = MPI_Wtime() - start_time;
    MPI_Finalize();
