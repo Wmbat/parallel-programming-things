@@ -23,8 +23,6 @@ using i32 = std::int32_t;
 using i64 = std::int64_t;
 using f64 = double;
 
-using iterator = typename std::vector<i64>::iterator;
-
 static constexpr i64 random_generation_bound = 1000;
 static constexpr i64 total_elements = 100000;
 
@@ -47,25 +45,15 @@ void qsort(It beg, It end)
    }
 }
 
-auto generate_random_array(i64 count) -> std::vector<i64>;
+auto generate_random_array(i64 count) -> std::vector<i32>;
 
 template <typename It>
-auto compute_median_pivot(It begin, It end) -> i64;
-
-void send_list(iterator begin, iterator end, i32 target, MPI_Comm comm);
-auto receive_list(i32 target, MPI_Comm comm) -> std::vector<i64>;
+auto compute_median_pivot(It begin, It end) -> i32;
 
 template <typename It>
-auto receive_list(It buffer_begin, i32 target, MPI_Comm comm) -> It
-{
-   i64 recv_size = 0;
-   MPI_Recv(&recv_size, 1, MPI_INT64_T, target, 0, comm, nullptr);
-
-   MPI_Recv(buffer_begin.base(), static_cast<i32>(recv_size), MPI_INT64_T, target, 0, comm,
-            nullptr);
-
-   return buffer_begin + recv_size;
-}
+void send_list(It begin, It end, i32 target, MPI_Comm comm);
+template <typename It>
+auto receive_list(It buffer_begin, i32 target, MPI_Comm comm) -> It;
 
 template <typename It>
 auto format_range(It begin, It end) -> std::string;
@@ -93,8 +81,8 @@ auto main(int argc, char* argv[]) -> int
 
    const i64 elements_per_core = static_cast<i64>(
       std::floor(static_cast<f64>(total_elements) / static_cast<f64>(process_count)));
-   std::vector<i64> data_buffer;
-   i64 pivot = 0;
+   std::vector<i32> data_buffer;
+   i32 pivot = 0;
 
    if (process_id == 0)
    {
@@ -105,15 +93,15 @@ auto main(int argc, char* argv[]) -> int
    }
    else
    {
-      data_buffer = std::vector<i64>(total_elements, 0);
+      data_buffer = std::vector<i32>(total_elements, 0);
    }
 
-   auto local_array = std::vector<i64>(elements_per_core);
+   auto local_array = std::vector<i32>(elements_per_core);
 
    MPI_Scatter(static_cast<void*>(data_buffer.data()), static_cast<i32>(elements_per_core),
-               MPI_INT64_T, static_cast<void*>(local_array.data()),
-               static_cast<i32>(elements_per_core), MPI_INT64_T, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&pivot, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
+               MPI_INT32_T, static_cast<void*>(local_array.data()),
+               static_cast<i32>(elements_per_core), MPI_INT32_T, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&pivot, 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
 
    std::cout << "P" << process_id << " - " << elements_per_core << " random integers received\n";
 
@@ -170,7 +158,7 @@ auto main(int argc, char* argv[]) -> int
 
          const i64 recv_size = std::distance(begin(data_buffer), recv_end);
 
-         std::rotate(begin(local_array), begin(local_array) + local_high_list_size,
+         std::rotate(begin(local_array), begin(local_array) + local_low_list_size,
                      end(local_array));
          local_array.resize(local_high_list_size + recv_size);
          std::copy(begin(data_buffer), recv_end, begin(local_array) + local_high_list_size);
@@ -186,7 +174,7 @@ auto main(int argc, char* argv[]) -> int
             pivot = compute_median_pivot(begin(local_array), end(local_array));
          }
 
-         MPI_Bcast(&pivot, 1, MPI_INT64_T, 0, communicator);
+         MPI_Bcast(&pivot, 1, MPI_INT32_T, 0, communicator);
       }
    }
 
@@ -202,8 +190,9 @@ auto main(int argc, char* argv[]) -> int
 
    std::partial_sum(begin(sizes), prev(end(sizes)), next(begin(displacements)));
 
-   MPI_Gatherv(local_array.data(), static_cast<i32>(local_array.size()), MPI_INT64_T,
-               data_buffer.data(), nullptr, nullptr, MPI_INT64_T, 0, MPI_COMM_WORLD);
+   MPI_Gatherv(local_array.data(), static_cast<i32>(local_array.size()), MPI_INT32_T,
+               data_buffer.data(), sizes.data(), displacements.data(), MPI_INT32_T, 0,
+               MPI_COMM_WORLD);
 
    const f64 elapsed_time = MPI_Wtime() - start_time;
    MPI_Finalize();
@@ -217,13 +206,13 @@ auto main(int argc, char* argv[]) -> int
    return 0;
 }
 
-auto generate_random_array(i64 count) -> std::vector<i64>
+auto generate_random_array(i64 count) -> std::vector<i32>
 {
    std::random_device rd;
    auto random_engine = std::default_random_engine(rd());
-   auto distribution = std::uniform_int_distribution<i64>(0, random_generation_bound);
+   auto distribution = std::uniform_int_distribution<i32>(0, random_generation_bound);
 
-   auto data = std::vector<i64>(count);
+   auto data = std::vector<i32>(count);
    for (auto& val : data)
    {
       val = distribution(random_engine);
@@ -233,31 +222,33 @@ auto generate_random_array(i64 count) -> std::vector<i64>
 }
 
 template <typename It>
-auto compute_median_pivot(It begin, It end) -> i64
+auto compute_median_pivot(It begin, It end) -> i32
 {
-   const i64 size = std::distance(begin, end);
-   const i64 sum = std::accumulate(begin, end, 0L);
-   const f64 median = static_cast<double>(sum) / static_cast<double>(size);
+   const i32 size = std::distance(begin, end);
+   const i32 sum = std::accumulate(begin, end, 0);
+   const float median = static_cast<float>(sum) / static_cast<float>(size);
 
-   return static_cast<i64>(std::ceil(median));
+   return static_cast<i32>(std::ceil(median));
 }
 
-void send_list(iterator begin, iterator end, i32 target, MPI_Comm comm)
+template <typename It>
+void send_list(It begin, It end, i32 target, MPI_Comm comm)
 {
-   i64 size = std::distance(begin, end);
+   i32 size = std::distance(begin, end);
 
-   MPI_Send(&size, 1, MPI_INT64_T, target, 0, comm);
-   MPI_Send(begin.base(), static_cast<i32>(size), MPI_INT64_T, target, 0, comm);
+   MPI_Send(&size, 1, MPI_INT32_T, target, 0, comm);
+   MPI_Send(begin.base(), size, MPI_INT32_T, target, 0, comm);
 }
-auto receive_list(i32 target, MPI_Comm comm) -> std::vector<i64>
+template <typename It>
+auto receive_list(It buffer_begin, i32 target, MPI_Comm comm) -> It
 {
-   i64 recv_size = 0;
-   MPI_Recv(&recv_size, 1, MPI_INT64_T, target, 0, comm, nullptr);
+   i32 recv_size = 0;
+   MPI_Recv(&recv_size, 1, MPI_INT32_T, target, 0, comm, nullptr);
 
-   auto array = std::vector<i64>(recv_size);
-   MPI_Recv(array.data(), static_cast<i32>(recv_size), MPI_INT64_T, target, 0, comm, nullptr);
+   MPI_Recv(buffer_begin.base(), recv_size, MPI_INT32_T, target, 0, comm,
+            nullptr);
 
-   return array;
+   return buffer_begin + recv_size;
 }
 
 template <typename It>
