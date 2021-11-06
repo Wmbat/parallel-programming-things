@@ -11,7 +11,9 @@
 
 using std::begin;
 using std::end;
+using std::next;
 using std::partition;
+using std::prev;
 
 using u16 = std::uint16_t;
 using u32 = std::uint32_t;
@@ -24,7 +26,7 @@ using f64 = double;
 using iterator = typename std::vector<i64>::iterator;
 
 static constexpr i64 random_generation_bound = 1000;
-static constexpr i64 element_per_core = 64;
+static constexpr i64 total_elements = 100000;
 
 template <typename It>
 void qsort(It beg, It end)
@@ -54,6 +56,18 @@ void send_list(iterator begin, iterator end, i32 target, MPI_Comm comm);
 auto receive_list(i32 target, MPI_Comm comm) -> std::vector<i64>;
 
 template <typename It>
+auto receive_list(It buffer_begin, i32 target, MPI_Comm comm) -> It
+{
+   i64 recv_size = 0;
+   MPI_Recv(&recv_size, 1, MPI_INT64_T, target, 0, comm, nullptr);
+
+   MPI_Recv(buffer_begin.base(), static_cast<i32>(recv_size), MPI_INT64_T, target, 0, comm,
+            nullptr);
+
+   return buffer_begin + recv_size;
+}
+
+template <typename It>
 auto format_range(It begin, It end) -> std::string;
 
 auto is_power_of_2(i32 n) -> bool;
@@ -77,21 +91,31 @@ auto main(int argc, char* argv[]) -> int
       return EXIT_FAILURE;
    }
 
-   std ::vector<i64> original_data;
+   const i64 elements_per_core = static_cast<i64>(
+      std::floor(static_cast<f64>(total_elements) / static_cast<f64>(process_count)));
+   std::vector<i64> data_buffer;
    i64 pivot = 0;
 
    if (process_id == 0)
    {
-      original_data = generate_random_array(element_per_core * process_count);
-      pivot = compute_median_pivot(begin(original_data), end(original_data));
+      data_buffer = generate_random_array(total_elements);
+      pivot = compute_median_pivot(begin(data_buffer), end(data_buffer));
+
+      std::cout << "Sorting " << total_elements << " elements\n";
+   }
+   else
+   {
+      data_buffer = std::vector<i64>(total_elements, 0);
    }
 
-   auto local_array = std::vector<i64>(element_per_core);
+   auto local_array = std::vector<i64>(elements_per_core);
 
-   MPI_Scatter(static_cast<void*>(original_data.data()), static_cast<i32>(element_per_core),
+   MPI_Scatter(static_cast<void*>(data_buffer.data()), static_cast<i32>(elements_per_core),
                MPI_INT64_T, static_cast<void*>(local_array.data()),
-               static_cast<i32>(element_per_core), MPI_INT64_T, 0, MPI_COMM_WORLD);
+               static_cast<i32>(elements_per_core), MPI_INT64_T, 0, MPI_COMM_WORLD);
    MPI_Bcast(&pivot, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
+
+   std::cout << "P" << process_id << " - " << elements_per_core << " random integers received\n";
 
    auto* communicator = MPI_COMM_WORLD;
 
@@ -111,7 +135,6 @@ auto main(int argc, char* argv[]) -> int
       const i64 local_low_list_size = std::distance(begin(local_array), separator);
       const i64 local_high_list_size = std::distance(separator, end(local_array));
 
-
       if ((process_id & (1 << i)) == 0)
       {
          std::cout << "P" << process_id << " - sending high-list\n";
@@ -120,16 +143,14 @@ auto main(int argc, char* argv[]) -> int
 
          std::cout << "P" << process_id << " - receiving low-list\n";
 
-         const auto recv_low_list = receive_list(target, communicator);
+         const auto recv_end = receive_list(begin(data_buffer), target, communicator);
 
          std::cout << "P" << process_id << " - merging\n";
 
-         auto new_array = std::vector<i64>(recv_low_list.size() + local_low_list_size);
-         std::copy(begin(local_array), separator, begin(new_array));
-         std::copy(begin(recv_low_list), end(recv_low_list),
-                   begin(new_array) + local_low_list_size);
+         const i64 recv_size = std::distance(begin(data_buffer), recv_end);
 
-         local_array = new_array;
+         local_array.resize(local_low_list_size + recv_size);
+         std::copy(begin(data_buffer), recv_end, begin(local_array) + local_low_list_size);
       }
       else
       {
@@ -139,16 +160,20 @@ auto main(int argc, char* argv[]) -> int
 
          std::cout << "P" << process_id << " - receiving high-list\n";
 
-         const auto recv_high_list = receive_list(target, communicator);
+         const auto recv_end = receive_list(begin(data_buffer), target, communicator);
 
          std::cout << "P" << process_id << " - merging\n";
 
-         auto new_array = std::vector<i64>(local_high_list_size + recv_high_list.size());
-         std::copy(separator, end(local_array), begin(new_array));
-         std::copy(begin(recv_high_list), end(recv_high_list),
-                   begin(new_array) + local_high_list_size);
+         // rotate left,
+         // resize
+         // insert new data at the end
 
-         local_array = new_array;
+         const i64 recv_size = std::distance(begin(data_buffer), recv_end);
+
+         std::rotate(begin(local_array), begin(local_array) + local_high_list_size,
+                     end(local_array));
+         local_array.resize(local_high_list_size + recv_size);
+         std::copy(begin(data_buffer), recv_end, begin(local_array) + local_high_list_size);
       }
 
       if (i >= 0)
@@ -156,7 +181,7 @@ auto main(int argc, char* argv[]) -> int
          MPI_Comm_split(communicator, local_rank & (1 << i), process_id, &communicator);
          MPI_Comm_rank(communicator, &local_rank);
 
-         if (process_id == 0)
+         if (local_rank == 0)
          {
             pivot = compute_median_pivot(begin(local_array), end(local_array));
          }
@@ -170,18 +195,22 @@ auto main(int argc, char* argv[]) -> int
    qsort(begin(local_array), end(local_array));
 
    i32 local_size = static_cast<i32>(local_array.size());
-   auto sizes = std::vector<i32>(process_count);
+   auto sizes = std::vector<i32>(process_count, 0);
+   auto displacements = std::vector<i32>(process_count, 0);
 
    MPI_Gather(&local_size, 1, MPI_INT32_T, sizes.data(), 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
+
+   std::partial_sum(begin(sizes), prev(end(sizes)), next(begin(displacements)));
+
    MPI_Gatherv(local_array.data(), static_cast<i32>(local_array.size()), MPI_INT64_T,
-               original_data.data(), nullptr, nullptr, MPI_INT64_T, 0, MPI_COMM_WORLD);
+               data_buffer.data(), nullptr, nullptr, MPI_INT64_T, 0, MPI_COMM_WORLD);
 
    const f64 elapsed_time = MPI_Wtime() - start_time;
    MPI_Finalize();
 
    if (process_id == 0)
    {
-      std::cout << "data:  " << format_range(begin(original_data), end(original_data)) << '\n';
+      std::cout << "data:  " << format_range(begin(data_buffer), end(data_buffer)) << '\n';
       std::cout << "elapsed time: " << elapsed_time << '\n';
    }
 
