@@ -24,7 +24,7 @@ using i64 = std::int64_t;
 using f64 = double;
 
 static constexpr i64 random_generation_bound = 1000;
-static constexpr i64 total_elements = 100000;
+static constexpr i64 total_elements = 30000;
 
 template <typename It>
 void qsort(It beg, It end)
