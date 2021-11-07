@@ -199,7 +199,9 @@ auto main(int argc, char* argv[]) -> int
 
    if (process_id == 0)
    {
-      std::cout << "data:  " << format_range(begin(data_buffer), end(data_buffer)) << '\n';
+      i64 true_size = elements_per_core * process_count;
+      std::cout << "data: {" << format_range(begin(data_buffer), begin(data_buffer) + true_size)
+                << "}\n";
       std::cout << "elapsed time: " << elapsed_time << '\n';
    }
 
@@ -245,8 +247,7 @@ auto receive_list(It buffer_begin, i32 target, MPI_Comm comm) -> It
    i32 recv_size = 0;
    MPI_Recv(&recv_size, 1, MPI_INT32_T, target, 0, comm, nullptr);
 
-   MPI_Recv(buffer_begin.base(), recv_size, MPI_INT32_T, target, 0, comm,
-            nullptr);
+   MPI_Recv(buffer_begin.base(), recv_size, MPI_INT32_T, target, 0, comm, nullptr);
 
    return buffer_begin + recv_size;
 }
