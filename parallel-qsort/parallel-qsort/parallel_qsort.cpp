@@ -142,19 +142,15 @@ auto main(int argc, char* argv[]) -> int
       }
       else
       {
-         std::cout << "P" << process_id << " - sending low-list\n";
-
-         send_list(begin(local_array), separator, target, communicator);
-
          std::cout << "P" << process_id << " - receiving high-list\n";
 
          const auto recv_end = receive_list(begin(data_buffer), target, communicator);
 
-         std::cout << "P" << process_id << " - merging\n";
+         std::cout << "P" << process_id << " - sending low-list\n";
 
-         // rotate left,
-         // resize
-         // insert new data at the end
+         send_list(begin(local_array), separator, target, communicator);
+
+         std::cout << "P" << process_id << " - merging\n";
 
          const i64 recv_size = std::distance(begin(data_buffer), recv_end);
 
