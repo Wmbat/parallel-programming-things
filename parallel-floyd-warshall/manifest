@@ -1,0 +1,13 @@
+: 1
+name: parallel-floyd-warshall
+version: 0.1.0-a.0.z
+project: parallel-programming-things
+summary: parallel-floyd-warshall C++ executable
+license: GPL-3
+description-file: README.md
+url: https://example.org/parallel-programming-things
+email: wmbat-dev@protonmail.com
+#build-error-email: wmbat-dev@protonmail.com
+depends: * build2 >= 0.14.0
+depends: * bpkg >= 0.14.0
+#depends: libhello ^1.0.0

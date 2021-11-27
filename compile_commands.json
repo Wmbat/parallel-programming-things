@@ -30,19 +30,6 @@
   "arguments": [
    "-std=c++23",
    "-o",
-   "../vermillon-clang-debug-asan/sequential-pi/sequential-pi/sequential-pi.o",
-   "-c",
-   "-x",
-   "c++",
-   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-pi/sequential-pi/sequential-pi.cpp"
-  ],
-  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-pi/sequential-pi/sequential-pi.cpp"
- },
- {
-  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
-  "arguments": [
-   "-std=c++23",
-   "-o",
    "../vermillon-clang-debug-asan/parallel-qsort/parallel-qsort/parallel_qsort.o",
    "-c",
    "-x",
@@ -54,14 +41,91 @@
  {
   "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
   "arguments": [
-   "-std=c++23",
+   "g++",
+   "-I/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-floyd-warshall",
+   "-I/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-floyd-warshall",
+   "-std=c++11",
    "-o",
-   "../vermillon-clang-debug-asan/parallel-pi/parallel-pi/parallel-pi.o",
+   "sequential-floyd-warshall/sequential-floyd-warshall/sequential-floyd-warshall.o",
    "-c",
    "-x",
    "c++",
-   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-pi/parallel-pi/parallel-pi.cpp"
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-floyd-warshall/sequential-floyd-warshall/sequential-floyd-warshall.cpp"
   ],
-  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-pi/parallel-pi/parallel-pi.cpp"
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-floyd-warshall/sequential-floyd-warshall/sequential-floyd-warshall.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "-std=c++11",
+   "-o",
+   "../vermillon-clang-debug-asan/sequential-pi/sequential-pi/sequential_pi.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-pi/sequential-pi/sequential_pi.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-pi/sequential-pi/sequential_pi.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "-std=c++23",
+   "-o",
+   "../vermillon-clang-debug-asan/parallel-pi/parallel-pi/parallel_pi.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-pi/parallel-pi/parallel_pi.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-pi/parallel-pi/parallel_pi.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "g++",
+   "-I/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-floyd-warshall",
+   "-I/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-floyd-warshall",
+   "-std=c++11",
+   "-o",
+   "sequential-floyd-warshall/sequential-floyd-warshall/graph/graph.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-floyd-warshall/sequential-floyd-warshall/graph/graph.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/sequential-floyd-warshall/sequential-floyd-warshall/graph/graph.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "g++",
+   "-I/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-floyd-warshall",
+   "-I/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-floyd-warshall",
+   "-std=c++11",
+   "-o",
+   "parallel-floyd-warshall/parallel-floyd-warshall/parallel-floyd-warshall.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-floyd-warshall/parallel-floyd-warshall/parallel-floyd-warshall.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-floyd-warshall/parallel-floyd-warshall/parallel-floyd-warshall.cpp"
+ },
+ {
+  "directory": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things",
+  "arguments": [
+   "g++",
+   "-I/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-floyd-warshall",
+   "-I/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-floyd-warshall",
+   "-std=c++11",
+   "-o",
+   "parallel-floyd-warshall/parallel-floyd-warshall/graph/graph.o",
+   "-c",
+   "-x",
+   "c++",
+   "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-floyd-warshall/parallel-floyd-warshall/graph/graph.cpp"
+  ],
+  "file": "/home/wmbat/Documents/concordia/COMP_428/assignments/parallel-programming-things/parallel-floyd-warshall/parallel-floyd-warshall/graph/graph.cpp"
  }
 ]

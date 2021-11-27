@@ -1,0 +1,6 @@
+project = parallel-floyd-warshall
+
+using version
+using config
+using install
+using dist

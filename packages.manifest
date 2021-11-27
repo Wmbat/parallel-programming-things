@@ -8,3 +8,7 @@ location: sequential-pi/
 location: parallel-pi/
 :
 location: parallel-balanced-pi/
+:
+location: sequential-floyd-warshall/
+:
+location: parallel-floyd-warshall/

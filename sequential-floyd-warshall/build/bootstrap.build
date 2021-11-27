@@ -1,0 +1,6 @@
+project = sequential-floyd-warshall
+
+using version
+using config
+using install
+using dist
