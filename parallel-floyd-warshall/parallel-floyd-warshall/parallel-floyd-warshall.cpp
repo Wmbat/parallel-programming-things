@@ -82,32 +82,32 @@ auto to_string(const std::vector<i32>& m) -> std::string
 {
    const u64 width = static_cast<u64>(std::sqrt(m.size()));
 
-   std::string ret;
-   ret.reserve(m.size());
+   std::string str;
+   str.reserve(m.size());
 
    int i = 0;
    for (i32 val : m)
    {
       if (i == width)
       {
-         ret += "\n";
+         str += "\n";
          i = 0;
       }
 
       if (val == tombstone)
       {
-         ret += "_ ";
+         str += "_ ";
       }
       else
       {
-         ret += std::to_string(val);
-         ret += " ";
+         str += std::to_string(val);
+         str += " ";
       }
 
       ++i;
    }
 
-   return ret;
+   return str;
 }
 
 template <typename It>
@@ -209,7 +209,7 @@ auto main(int argc, char** argv) -> int
       }
 
       MPI_Bcast(kth_row.data(), local_width, MPI_INT32_T, k_process_index, col_comm);
-      std::cout << "P" << process_id << "Receiving " << k
+      std::cout << "P" << process_id << " - Receiving " << k
                 << "th row: " << format_range(std::begin(kth_row), std::end(kth_row)) << "\n";
 
       for (int j = 0; j < local_width; ++j)
@@ -249,9 +249,16 @@ auto format_range(It begin, It end) -> std::string
    using type = typename It::value_type;
 
    std::string str = " ";
-   std::for_each(begin, end, [&](const type& v) {
-      str += std::to_string(v);
-      str += " ";
+   std::for_each(begin, end, [&](const type& val) {
+      if (val == tombstone)
+      {
+         str += "_ ";
+      }
+      else
+      {
+         str += std::to_string(val);
+         str += " ";
+      }
    });
 
    return str;
