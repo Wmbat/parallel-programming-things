@@ -144,12 +144,11 @@ auto main(int argc, char** argv) -> int
       g.add_connection(2, edge{2, 3});
       g.add_connection(3, edge{-1, 1});
 
-      std::cout << "GRAPH\n";
-      print(g);
+      const auto matrix = create_adjacency_matrix(g);
 
       std::cout << "P" << process_id << " - Original Matrix\n";
+      std::cout << to_string(matrix) << "\n";
 
-      const auto matrix = create_adjacency_matrix(g);
       interlaced_matrix = reorganize_matrix(matrix, process_count);
 
       std::cout << "P0 - adjacency matrix size = " << matrix.size() << "\n";
@@ -164,8 +163,13 @@ auto main(int argc, char** argv) -> int
    MPI_Scatter(interlaced_matrix.data(), local_size, MPI_INT32_T, local_matrix.data(), local_size,
                MPI_INT32_T, 0, MPI_COMM_WORLD);
 
+   std::cout << "P" << process_id << " - local matrix:\n" << to_string(local_matrix) << "\n";
+
    i32 col_color = process_id % static_cast<i32>(std::sqrt(process_count));
    i32 row_color = std::floor(static_cast<f32>(process_id) / std::sqrt(process_count));
+
+   std::cout << "P" << process_id << " - row colour = " << row_color << "\n";
+   std::cout << "P" << process_id << " - column colour = " << col_color << "\n";
 
    MPI_Comm col_comm = {};
    MPI_Comm row_comm = {};
@@ -173,8 +177,8 @@ auto main(int argc, char** argv) -> int
    MPI_Comm_split(MPI_COMM_WORLD, row_color, process_id, &row_comm);
 
    i32 local_width = static_cast<i32>(std::sqrt(local_size));
-   i32 total_size = static_cast<i32>(local_size * std::sqrt(process_count));
-   for (int k = 0; k < total_size; ++k)
+   i32 total_width = static_cast<i32>(std::sqrt(interlaced_matrix.size()));
+   for (int k = 0; k < total_width; ++k)
    {
       const auto k_process_index = k / local_width;
 
@@ -187,12 +191,10 @@ auto main(int argc, char** argv) -> int
             kth_col[i] = local_matrix[col_offset + local_width * i];
          }
 
-         std::cout << "P" << process_id << "broadcasting " << k << "th row to columns\n";
+         std::cout << "P" << process_id << " - broadcasting " << k << "th column to rows\n";
       }
 
       MPI_Bcast(kth_col.data(), local_width, MPI_INT32_T, k_process_index, row_comm);
-
-      std::cout << "P" << process_id << "broadcasting kth column to rows\n";
 
       auto kth_row = std::vector<i32>(local_width);
       if (k_process_index == row_color)
@@ -203,13 +205,12 @@ auto main(int argc, char** argv) -> int
             kth_row[i] = local_matrix[row_offset * local_width + i];
          }
 
-         std::cout << "P" << process_id << "broadcasting " << k << "th row to columns\n";
+         std::cout << "P" << process_id << " - broadcasting " << k << "th row to columns\n";
       }
 
       MPI_Bcast(kth_row.data(), local_width, MPI_INT32_T, k_process_index, col_comm);
-      std::cout << "P" << process_id
-                << "Receiving kth row: " << format_range(std::begin(kth_row), std::end(kth_row))
-                << "\n";
+      std::cout << "P" << process_id << "Receiving " << k
+                << "th row: " << format_range(std::begin(kth_row), std::end(kth_row)) << "\n";
 
       for (int j = 0; j < local_width; ++j)
       {
@@ -222,6 +223,8 @@ auto main(int argc, char** argv) -> int
             }
          }
       }
+
+      std::cout << "P" << process_id << " - local matrix:\n" << to_string(local_matrix) << "\n";
    }
 
    MPI_Gather(local_matrix.data(), local_matrix.size(), MPI_INT32_T, interlaced_matrix.data(),
