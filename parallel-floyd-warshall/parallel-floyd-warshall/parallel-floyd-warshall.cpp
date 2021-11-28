@@ -65,7 +65,8 @@ auto reorganize_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<
       }
    }
 
-   auto interlaced = std::vector<i32>(m.size());
+   auto interlaced = std::vector<i32>();
+   interlaced.reserve(m.size());
    for (const auto& mat : matrices)
    {
       for (i32 val : mat)
@@ -105,7 +106,12 @@ auto to_string(const std::vector<i32>& m) -> std::string
 
       ++i;
    }
+
+   return ret;
 }
+
+template <typename It>
+auto format_range(It begin, It end) -> std::string;
 
 auto is_power_of_2(i32 n) -> bool;
 
@@ -145,37 +151,107 @@ auto main(int argc, char** argv) -> int
 
       const auto matrix = create_adjacency_matrix(g);
       interlaced_matrix = reorganize_matrix(matrix, process_count);
+
+      std::cout << "P0 - adjacency matrix size = " << matrix.size() << "\n";
+      std::cout << "P0 - interlaced matrix size = " << interlaced_matrix.size() << "\n";
+      std::cout << "P0 - Scattering matrix\n";
    }
 
-   const i32 per_matrix_count = i32(interlaced_matrix.size()) / process_count;
-   auto local_matrix = std::vector<i32>(per_matrix_count, 0);
-   MPI_Scatter(interlaced_matrix.data(), per_matrix_count, MPI_INT32_T, local_matrix.data(),
-               per_matrix_count, MPI_INT32_T, 0, MPI_COMM_WORLD);
+   i32 local_size = i32(interlaced_matrix.size()) / process_count;
+   MPI_Bcast(&local_size, 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
 
-   const auto str = to_string(local_matrix);
+   auto local_matrix = std::vector<i32>(local_size, 0);
+   MPI_Scatter(interlaced_matrix.data(), local_size, MPI_INT32_T, local_matrix.data(), local_size,
+               MPI_INT32_T, 0, MPI_COMM_WORLD);
 
-   std::cout << "\nP" << process_id << " - matrix:\n" << str;
+   i32 col_color = process_id % static_cast<i32>(std::sqrt(process_count));
+   i32 row_color = std::floor(static_cast<f32>(process_id) / std::sqrt(process_count));
 
-   /*
-   for (const auto& row : dist)
+   MPI_Comm col_comm = {};
+   MPI_Comm row_comm = {};
+   MPI_Comm_split(MPI_COMM_WORLD, col_color, process_id, &col_comm);
+   MPI_Comm_split(MPI_COMM_WORLD, row_color, process_id, &row_comm);
+
+   i32 local_width = static_cast<i32>(std::sqrt(local_size));
+   i32 total_size = static_cast<i32>(local_size * std::sqrt(process_count));
+   for (int k = 0; k < total_size; ++k)
    {
-      for (auto j : row)
+      const auto k_process_index = k / local_width;
+
+      auto kth_col = std::vector<i32>(local_width);
+      if (k_process_index == col_color)
       {
-         if (j == tombstone)
+         const u32 col_offset = k % local_width;
+         for (u32 i = 0; i < kth_col.size(); ++i)
          {
-            std::cout << "_ ";
+            kth_col[i] = local_matrix[col_offset + local_width * i];
          }
-         else
-         {
-            std::cout << j << " ";
-         }
+
+         std::cout << "P" << process_id << "broadcasting " << k << "th row to columns\n";
       }
 
-      std::cout << "\n";
+      MPI_Bcast(kth_col.data(), local_width, MPI_INT32_T, k_process_index, row_comm);
+
+      std::cout << "P" << process_id << "broadcasting kth column to rows\n";
+
+      auto kth_row = std::vector<i32>(local_width);
+      if (k_process_index == row_color)
+      {
+         const u32 row_offset = k % local_width;
+         for (int i = 0; i < kth_row.size(); ++i)
+         {
+            kth_row[i] = local_matrix[row_offset * local_width + i];
+         }
+
+         std::cout << "P" << process_id << "broadcasting " << k << "th row to columns\n";
+      }
+
+      MPI_Bcast(kth_row.data(), local_width, MPI_INT32_T, k_process_index, col_comm);
+      std::cout << "P" << process_id
+                << "Receiving kth row: " << format_range(std::begin(kth_row), std::end(kth_row))
+                << "\n";
+
+      for (int j = 0; j < local_width; ++j)
+      {
+         for (int i = 0; i < local_width; ++i)
+         {
+            if (kth_row[j] != tombstone and kth_col[i] != tombstone)
+            {
+               local_matrix[i + j * local_width] =
+                  std::min(kth_col[i] + kth_row[j], local_matrix[i + j * local_width]);
+            }
+         }
+      }
    }
-   */
+
+   MPI_Gather(local_matrix.data(), local_matrix.size(), MPI_INT32_T, interlaced_matrix.data(),
+              local_matrix.size(), MPI_INT32_T, 0, MPI_COMM_WORLD);
+
+   const f64 elapsed_time = MPI_Wtime() - start_time;
+   MPI_Finalize();
+
+   if (process_id == 0)
+   {
+      std::cout << "data: {" << format_range(begin(interlaced_matrix), end(interlaced_matrix))
+                << "}\n";
+      std::cout << "elapsed time: " << elapsed_time << '\n';
+   }
 
    return 0;
+}
+
+template <typename It>
+auto format_range(It begin, It end) -> std::string
+{
+   using type = typename It::value_type;
+
+   std::string str = " ";
+   std::for_each(begin, end, [&](const type& v) {
+      str += std::to_string(v);
+      str += " ";
+   });
+
+   return str;
 }
 
 auto is_power_of_2(i32 n) -> bool
