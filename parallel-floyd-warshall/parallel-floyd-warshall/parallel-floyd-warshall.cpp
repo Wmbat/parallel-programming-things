@@ -156,8 +156,10 @@ auto main(int argc, char** argv) -> int
       std::cout << "P0 - Scattering matrix\n";
    }
 
-   i32 local_size = i32(interlaced_matrix.size()) / process_count;
-   MPI_Bcast(&local_size, 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
+   i32 total_size = i32(interlaced_matrix.size());
+   MPI_Bcast(&total_size, 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
+
+   i32 local_size = total_size / process_count;
 
    auto local_matrix = std::vector<i32>(local_size, 0);
    MPI_Scatter(interlaced_matrix.data(), local_size, MPI_INT32_T, local_matrix.data(), local_size,
@@ -177,7 +179,7 @@ auto main(int argc, char** argv) -> int
    MPI_Comm_split(MPI_COMM_WORLD, row_color, process_id, &row_comm);
 
    i32 local_width = static_cast<i32>(std::sqrt(local_size));
-   i32 total_width = static_cast<i32>(std::sqrt(interlaced_matrix.size()));
+   i32 total_width = static_cast<i32>(std::sqrt(total_size));
    for (int k = 0; k < total_width; ++k)
    {
       const auto k_process_index = k / local_width;
@@ -218,8 +220,8 @@ auto main(int argc, char** argv) -> int
          {
             if (kth_row[j] != tombstone and kth_col[i] != tombstone)
             {
-               local_matrix[i + j * local_width] =
-                  std::min(kth_col[i] + kth_row[j], local_matrix[i + j * local_width]);
+               local_matrix[j + i * local_width] =
+                  std::min(kth_col[i] + kth_row[j], local_matrix[j + i * local_width]);
             }
          }
       }
