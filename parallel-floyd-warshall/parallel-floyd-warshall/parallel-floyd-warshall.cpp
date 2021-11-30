@@ -10,22 +10,6 @@
 
 static constexpr i32 tombstone = std::numeric_limits<i32>::max();
 
-void print(const graph& g)
-{
-   for (const auto& node : g)
-   {
-      for (const auto edge : node.edges)
-      {
-         std::cout << node.index << " |-- " << edge.weight << " --> " << edge.end << "\n";
-      }
-
-      if (node.edges.empty())
-      {
-         std::cout << node.index << "\n";
-      }
-   }
-}
-
 auto create_adjacency_matrix(const graph& g) -> std::vector<i32>
 {
    auto dist = std::vector<i32>(g.size() * g.size(), tombstone);
@@ -45,38 +29,9 @@ auto create_adjacency_matrix(const graph& g) -> std::vector<i32>
 
    return dist;
 }
-auto reorganize_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<i32>
-{
-   const u64 total_size = static_cast<u64>(std::sqrt(m.size()));
-   const u64 process_row_count = static_cast<u64>(std::sqrt(div_count));
-   const u64 divided_size = static_cast<u64>(static_cast<f64>(total_size) / std::sqrt(div_count));
 
-   auto matrices = std::vector<std::vector<i32>>(div_count);
-
-   for (u64 i = 0u; i < total_size; ++i)
-   {
-      for (u64 j = 0u; j < total_size; ++j)
-      {
-         const auto row = i / divided_size;
-         const auto col = j / divided_size;
-
-         auto& mat = matrices[row * process_row_count + col];
-         mat.push_back(m[i * total_size + j]);
-      }
-   }
-
-   auto interlaced = std::vector<i32>();
-   interlaced.reserve(m.size());
-   for (const auto& mat : matrices)
-   {
-      for (i32 val : mat)
-      {
-         interlaced.push_back(val);
-      }
-   }
-
-   return interlaced;
-}
+auto interlace_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<i32>;
+auto deinterlace_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<i32>;
 
 auto to_string(const std::vector<i32>& m) -> std::string
 {
@@ -146,13 +101,8 @@ auto main(int argc, char** argv) -> int
 
       const auto matrix = create_adjacency_matrix(g);
 
-      std::cout << "P" << process_id << " - Original Matrix\n";
-      std::cout << to_string(matrix) << "\n";
+      interlaced_matrix = interlace_matrix(matrix, process_count);
 
-      interlaced_matrix = reorganize_matrix(matrix, process_count);
-
-      std::cout << "P0 - adjacency matrix size = " << matrix.size() << "\n";
-      std::cout << "P0 - interlaced matrix size = " << interlaced_matrix.size() << "\n";
       std::cout << "P0 - Scattering matrix\n";
    }
 
@@ -220,8 +170,8 @@ auto main(int argc, char** argv) -> int
          {
             if (kth_row[j] != tombstone and kth_col[i] != tombstone)
             {
-               local_matrix[j + i * local_width] =
-                  std::min(kth_col[i] + kth_row[j], local_matrix[j + i * local_width]);
+               const i32 offset = j + i * local_width;
+               local_matrix[offset] = std::min(kth_col[i] + kth_row[j], local_matrix[offset]);
             }
          }
       }
@@ -232,17 +182,85 @@ auto main(int argc, char** argv) -> int
    MPI_Gather(local_matrix.data(), local_matrix.size(), MPI_INT32_T, interlaced_matrix.data(),
               local_matrix.size(), MPI_INT32_T, 0, MPI_COMM_WORLD);
 
-   const f64 elapsed_time = MPI_Wtime() - start_time;
-   MPI_Finalize();
-
    if (process_id == 0)
    {
-      std::cout << "data: {" << format_range(begin(interlaced_matrix), end(interlaced_matrix))
-                << "}\n";
-      std::cout << "elapsed time: " << elapsed_time << '\n';
+      const auto final_matrix = deinterlace_matrix(interlaced_matrix, process_count);
+      std::cout << to_string(final_matrix) << std::endl;
    }
 
+   MPI_Finalize();
+
    return 0;
+}
+
+auto interlace_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<i32>
+{
+   const u64 total_size = static_cast<u64>(std::sqrt(m.size()));
+   const u64 process_row_count = static_cast<u64>(std::sqrt(div_count));
+   const u64 divided_size = static_cast<u64>(static_cast<f64>(total_size) / std::sqrt(div_count));
+
+   auto matrices = std::vector<std::vector<i32>>(div_count);
+
+   for (u64 i = 0u; i < total_size; ++i)
+   {
+      for (u64 j = 0u; j < total_size; ++j)
+      {
+         const auto row = i / divided_size;
+         const auto col = j / divided_size;
+
+         auto& mat = matrices[row * process_row_count + col];
+         mat.push_back(m[i * total_size + j]);
+      }
+   }
+
+   auto interlaced = std::vector<i32>();
+   interlaced.reserve(m.size());
+   for (const auto& mat : matrices)
+   {
+      for (i32 val : mat)
+      {
+         interlaced.push_back(val);
+      }
+   }
+
+   return interlaced;
+}
+auto deinterlace_matrix(const std::vector<i32>& m, i32 process_count) -> std::vector<i32>
+{
+   const u64 total_matrix_size = m.size();
+   const u64 local_matrix_size = static_cast<u64>(std::sqrt(m.size()));
+   const u64 local_matrix_width = static_cast<u64>(std::sqrt(local_matrix_size));
+   const u64 processes_per_row = static_cast<u64>(std::sqrt(process_count));
+
+   auto local_matrices = std::vector<std::vector<i32>>();
+   for (u64 i = 0; i < total_matrix_size; i += local_matrix_size)
+   {
+      auto data = std::vector<i32>(local_matrix_size);
+      for (u64 j = 0; j < local_matrix_size; ++j)
+      {
+         data[j] = m[i + j];
+      }
+
+      local_matrices.push_back(data);
+   }
+
+   auto result = std::vector<i32>();
+   result.reserve(total_matrix_size);
+   for (u64 j = 0; j < processes_per_row; ++j)
+   {
+      for (u64 row_index = 0; row_index < local_matrix_width; ++row_index)
+      {
+         for (u64 i = 0; i < processes_per_row; ++i)
+         {
+            for (u64 row_offset = 0; row_offset < local_matrix_width; ++row_offset)
+            {
+               result.push_back(local_matrices[j * processes_per_row + i][row_index * local_matrix_width + row_offset]);
+            }
+         }
+      }
+   }
+
+   return result;
 }
 
 template <typename It>
