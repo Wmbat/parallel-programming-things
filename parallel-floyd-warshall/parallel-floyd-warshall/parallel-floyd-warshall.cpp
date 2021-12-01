@@ -19,44 +19,88 @@ using f64 = double;
 
 static constexpr i32 mark = std::numeric_limits<i32>::max();
 
-static const auto matrix = std::vector<i32>({
-      0,   1, mark, mark,   4, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark,   0,   2, mark,   3, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark,   0,   3,   2, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark,   0,   4, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark,   0,   5,   2, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,  20, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-      6, mark, mark, mark, mark,   0, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark,   0,   1, mark, mark, mark, mark,   6, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark,   0,   2, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark,   0,   3,   2, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   4, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   5, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark,   6, mark,   3, mark, mark,   0,   1, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   1, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   2, mark,   3, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   3, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   4, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   5, mark, mark, mark, mark, mark,  10, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   6, mark, mark, mark, mark,   0, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0, mark,   2, mark, mark,   6, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   5,   0, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   4,   0, mark,   2, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   3,   0, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,  14,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   2,   0, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   2,   1,   0, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   1, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-     25, mark, mark,  10, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   2, mark, mark, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   1,   2, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0,   3, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   4,   3, mark, mark,   0, mark, mark, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   0, mark, mark, mark, mark,   6, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   2,   5,   0, mark, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   4,   0, mark, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   2,   3,   0, mark, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   2,   0, mark, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   3, mark,   1,   0, mark,
-    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,   1,   0
-});
+static const auto matrix = std::vector<i32>(
+   {0,    1,    mark, mark, 4,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, 0,    2,    mark, 3,    mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 0,    3,    2,    mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 0,
+    4,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, 0,    5,    2,    mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, 20,   mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, 6,    mark, mark, mark, mark, 0,    mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 0,    1,
+    mark, mark, mark, mark, 6,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, 0,    2,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, 0,    3,    2,    mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 0,    4,    mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, 0,    5,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, 6,    mark, 3,    mark, mark, 0,    1,    mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 0,    1,    mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, 0,    2,    mark, 3,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, 0,    3,    mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 0,    4,    mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    0,    5,    mark, mark, mark, mark, mark, 10,   mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    6,    mark, mark, mark, mark, 0,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 0,    mark, 2,    mark, mark, 6,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 5,    0,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, 4,    0,    mark, 2,    mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, 3,    0,    mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, 14,   mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 2,    0,    mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, 2,    1,    0,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, 0,    1,    mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, 25,   mark, mark, 10,   mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 0,    2,    mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, 0,    1,    2,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, 0,    3,    mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, 4,    3,    mark, mark, 0,    mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, 0,    mark, mark, mark, mark, 6,    mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, 2,    5,    0,    mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 4,    0,    mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 2,    3,
+    0,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, 2,    0,    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, 3,    mark, 1,    0,    mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark,
+    mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, mark, 1,    0});
 
 auto interlace_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<i32>;
 auto deinterlace_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<i32>;
@@ -173,7 +217,8 @@ auto main(int argc, char** argv) -> int
 
    if (process_id == 0)
    {
-      std::cout << "\n\n" << format_matrix(deinterlace_matrix(interlaced_matrix, process_count)) << "\n\n";
+      std::cout << "\n\n"
+                << format_matrix(deinterlace_matrix(interlaced_matrix, process_count)) << "\n\n";
    }
 
    MPI_Finalize();
@@ -219,55 +264,26 @@ auto deinterlace_matrix(const std::vector<i32>& m, i32 process_count) -> std::ve
    const u64 local_matrix_size = static_cast<u64>(std::sqrt(m.size()));
    const u64 local_matrix_width = static_cast<u64>(std::sqrt(local_matrix_size));
    const u64 processes_per_row = static_cast<u64>(std::sqrt(process_count));
+   const u64 size_by_p_row = local_matrix_size / processes_per_row;
 
-   auto local_matrices = std::vector<std::vector<i32>>();
-   for (u64 i = 0; i < total_matrix_size; i += local_matrix_size)
+   std::vector<i32> result = std::vector<i32>(total_matrix_size);
+   for (u64 node = 0; node < process_count; node++)
    {
-      auto data = std::vector<i32>(local_matrix_size);
-      for (u64 j = 0; j < local_matrix_size; ++j)
-      {
-         data[j] = m[i + j];
-      }
+      const auto row_offset = node / processes_per_row;
+      const auto col_offset = node % processes_per_row;
 
-      local_matrices.push_back(data);
-   }
-
-   auto result = std::vector<i32>();
-   result.reserve(total_matrix_size);
-   for (u64 j = 0; j < processes_per_row; ++j)
-   {
-      for (u64 row_index = 0; row_index < local_matrix_width; ++row_index)
+      for (int i = 0; i < size_by_p_row; ++i)
       {
-         for (u64 i = 0; i < processes_per_row; ++i)
+         for (int j = 0; j < size_by_p_row; ++j)
          {
-            for (u64 row_offset = 0; row_offset < local_matrix_width; ++row_offset)
-            {
-               result.push_back(local_matrices[j * processes_per_row + i]
-                                              [row_index * local_matrix_width + row_offset]);
-            }
+            result[row_offset * size_by_p_row * local_matrix_size + col_offset * size_by_p_row +
+                   i * local_matrix_size + j] =
+               m[node * size_by_p_row * size_by_p_row + i * size_by_p_row + j];
          }
       }
    }
 
    return result;
-}
-
-auto read_matrix_from_file(const std::string& filename) -> std::vector<i32>
-{
-   auto file = std::ifstream(filename);
-
-   std::string word;
-   while (file >> word)
-   {
-      std::cout << word << std::endl;
-   }
-
-   return {};
-}
-void write_matrix_to_file(const std::string& filename, const std::vector<i32>& data)
-{
-   auto file = std::ofstream(filename);
-   file << format_matrix(data);
 }
 
 template <typename It>
@@ -311,8 +327,9 @@ auto format_matrix(const std::vector<i32>& matrix) -> std::string
       else
       {
          str += std::to_string(val);
-         str += ", ";
+         str += " ";
       }
+      ++i;
    }
 
    return str.substr(0, str.size() - 2);
