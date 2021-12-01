@@ -1,72 +1,33 @@
-#include <parallel-floyd-warshall/graph/graph.hpp>
-#include <parallel-floyd-warshall/types.hpp>
-
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <limits>
+#include <vector>
 
 #include <mpi.h>
 
+using i32 = std::int32_t;
+using i64 = std::int64_t;
+
+using u32 = std::uint32_t;
+using u64 = std::uint64_t;
+
+using f32 = float;
+using f64 = double;
+
 static constexpr i32 tombstone = std::numeric_limits<i32>::max();
-
-auto create_adjacency_matrix(const graph& g) -> std::vector<i32>
-{
-   auto dist = std::vector<i32>(g.size() * g.size(), tombstone);
-
-   for (const auto& n : g)
-   {
-      dist[n.index * g.size() + n.index] = 0;
-   }
-
-   for (const auto& n : g)
-   {
-      for (const auto& e : n.edges)
-      {
-         dist[n.index * g.size() + e.end] = e.weight;
-      }
-   }
-
-   return dist;
-}
 
 auto interlace_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<i32>;
 auto deinterlace_matrix(const std::vector<i32>& m, i32 div_count) -> std::vector<i32>;
 
-auto to_string(const std::vector<i32>& m) -> std::string
-{
-   const u64 width = static_cast<u64>(std::sqrt(m.size()));
-
-   std::string str;
-   str.reserve(m.size());
-
-   int i = 0;
-   for (i32 val : m)
-   {
-      if (i == width)
-      {
-         str += "\n";
-         i = 0;
-      }
-
-      if (val == tombstone)
-      {
-         str += "_ ";
-      }
-      else
-      {
-         str += std::to_string(val);
-         str += " ";
-      }
-
-      ++i;
-   }
-
-   return str;
-}
+auto read_matrix_from_file(const std::string& filename) -> std::vector<i32>;
+void write_matrix_to_file(const std::string& filename, const std::vector<i32>& data);
 
 template <typename It>
 auto format_range(It begin, It end) -> std::string;
+auto format_matrix(const std::vector<i32>& matrix) -> std::string;
 
 auto is_power_of_2(i32 n) -> bool;
 
@@ -92,14 +53,7 @@ auto main(int argc, char** argv) -> int
    std::vector<i32> interlaced_matrix;
    if (process_id == 0)
    {
-      graph g;
-      g.add_connection(0, edge{-2, 2});
-      g.add_connection(1, edge{4, 0});
-      g.add_connection(1, edge{3, 2});
-      g.add_connection(2, edge{2, 3});
-      g.add_connection(3, edge{-1, 1});
-
-      const auto matrix = create_adjacency_matrix(g);
+      const auto matrix = read_matrix_from_file("input.txt");
 
       interlaced_matrix = interlace_matrix(matrix, process_count);
 
@@ -115,7 +69,7 @@ auto main(int argc, char** argv) -> int
    MPI_Scatter(interlaced_matrix.data(), local_size, MPI_INT32_T, local_matrix.data(), local_size,
                MPI_INT32_T, 0, MPI_COMM_WORLD);
 
-   std::cout << "P" << process_id << " - local matrix:\n" << to_string(local_matrix) << "\n";
+   std::cout << "P" << process_id << " - local matrix:\n" << format_matrix(local_matrix) << "\n";
 
    i32 col_color = process_id % static_cast<i32>(std::sqrt(process_count));
    i32 row_color = std::floor(static_cast<f32>(process_id) / std::sqrt(process_count));
@@ -176,16 +130,17 @@ auto main(int argc, char** argv) -> int
          }
       }
 
-      std::cout << "P" << process_id << " - local matrix:\n" << to_string(local_matrix) << "\n";
+      std::cout << "P" << process_id << " - local matrix:\n" << format_matrix(local_matrix) << "\n";
    }
 
-   MPI_Gather(local_matrix.data(), local_matrix.size(), MPI_INT32_T, interlaced_matrix.data(),
-              local_matrix.size(), MPI_INT32_T, 0, MPI_COMM_WORLD);
+   MPI_Gather(local_matrix.data(), static_cast<i32>(local_matrix.size()), MPI_INT32_T,
+              interlaced_matrix.data(), static_cast<i32>(local_matrix.size()), MPI_INT32_T, 0,
+              MPI_COMM_WORLD);
 
    if (process_id == 0)
    {
-      const auto final_matrix = deinterlace_matrix(interlaced_matrix, process_count);
-      std::cout << to_string(final_matrix) << std::endl;
+      write_matrix_to_file("output_matrix.txt",
+                           deinterlace_matrix(interlaced_matrix, process_count));
    }
 
    MPI_Finalize();
@@ -254,13 +209,32 @@ auto deinterlace_matrix(const std::vector<i32>& m, i32 process_count) -> std::ve
          {
             for (u64 row_offset = 0; row_offset < local_matrix_width; ++row_offset)
             {
-               result.push_back(local_matrices[j * processes_per_row + i][row_index * local_matrix_width + row_offset]);
+               result.push_back(local_matrices[j * processes_per_row + i]
+                                              [row_index * local_matrix_width + row_offset]);
             }
          }
       }
    }
 
    return result;
+}
+
+auto read_matrix_from_file(const std::string& filename) -> std::vector<i32>
+{
+   auto file = std::ifstream(filename);
+
+   std::string word;
+   while (file >> word)
+   {
+      std::cout << word << std::endl;
+   }
+
+   return {};
+}
+void write_matrix_to_file(const std::string& filename, const std::vector<i32>& data)
+{
+   auto file = std::ofstream(filename);
+   file << format_matrix(data);
 }
 
 template <typename It>
@@ -282,6 +256,33 @@ auto format_range(It begin, It end) -> std::string
    });
 
    return str;
+}
+auto format_matrix(const std::vector<i32>& matrix) -> std::string
+{
+   const auto width = static_cast<i32>(std::sqrt(matrix.size()));
+
+   std::string str;
+   i32 i = 0;
+   for (i32 val : matrix)
+   {
+      if (i == width)
+      {
+         str += "\n";
+         i = 0;
+      }
+
+      if (val == tombstone)
+      {
+         str += "_ ";
+      }
+      else
+      {
+         str += std::to_string(val);
+         str += ", ";
+      }
+   }
+
+   return str.substr(0, str.size() - 2);
 }
 
 auto is_power_of_2(i32 n) -> bool
